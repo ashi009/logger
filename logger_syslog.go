@@ -15,9 +15,7 @@ limitations under the License.
 
 package logger
 
-import (
-	"log/syslog"
-)
+import "log/syslog"
 
 func setup(src string) (*syslog.Writer, *syslog.Writer, error) {
 	il, err := syslog.New(syslog.LOG_NOTICE, src)
@@ -26,6 +24,7 @@ func setup(src string) (*syslog.Writer, *syslog.Writer, error) {
 	}
 	el, err := syslog.New(syslog.LOG_ERR, src)
 	if err != nil {
+		il.Close()
 		return nil, nil, err
 	}
 	return il, el, nil

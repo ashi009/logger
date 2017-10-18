@@ -27,22 +27,7 @@ type writer struct {
 	el  *eventlog.Log
 }
 
-// Write sends a log message to the Event Log.
-func (w *writer) Write(b []byte) (int, error) {
-	switch w.pri {
-	case sInfo:
-		return len(b), w.el.Info(1, string(b))
-	case sError:
-		return len(b), w.el.Error(2, string(b))
-	}
-	return 0, fmt.Errorf("unrecognized severity: %v", w.pri)
-}
-
-func (w *writer) Close() error {
-	return w.el.Close()
-}
-
-func newW(pri severity, src string) (*writer, error) {
+func newWriter(pri severity, src string) (*writer, error) {
 	// Continue if we receive "registry key already exists" or if we get
 	// ERROR_ACCESS_DENIED so that we can log without administrative permissions
 	// for pre-existing eventlog sources.
@@ -62,13 +47,29 @@ func newW(pri severity, src string) (*writer, error) {
 	}, nil
 }
 
+// Write sends a log message to the Event Log.
+func (w *writer) Write(b []byte) (int, error) {
+	switch w.pri {
+	case sInfo:
+		return len(b), w.el.Info(1, string(b))
+	case sError:
+		return len(b), w.el.Error(2, string(b))
+	}
+	return 0, fmt.Errorf("unrecognized severity: %v", w.pri)
+}
+
+func (w *writer) Close() error {
+	return w.el.Close()
+}
+
 func setup(src string) (*writer, *writer, error) {
-	infoL, err := newW(sInfo, src)
+	infoL, err := newWriter(sInfo, src)
 	if err != nil {
 		return nil, nil, err
 	}
-	errL, err := newW(sError, src)
+	errL, err := newWriter(sError, src)
 	if err != nil {
+		infoL.Close()
 		return nil, nil, err
 	}
 	return infoL, errL, nil
